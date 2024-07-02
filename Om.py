@@ -5,7 +5,7 @@ from telegram.request import HTTPXRequest
 import requests
 
 logging.basicConfig(
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO
+    format='%(asctime)s - %(name=sname)s - %(levelname)s - %(message)s', level=logging.INFO
 )
 logger = logging.getLogger(__name__)
 
@@ -37,7 +37,8 @@ async def process_urls(update: Update, context: CallbackContext, urls: list) -> 
             try:
                 response = requests.get(
                     f"{ENDPOINT}{url}", 
-                    proxies={"http": proxy_url, "https": proxy_url} if proxy_url else None
+                    proxies={"http": proxy_url, "https": proxy_url} if proxy_url else None,
+                    timeout=10.0
                 )
                 if response.status_code == 200:
                     data = response.json()
@@ -70,9 +71,7 @@ async def set_proxy(update: Update, context: CallbackContext) -> None:
     await update.message.reply_text(f'Proxy set to: {proxy_url}' if proxy_url else 'Proxy removed.')
 
 def main() -> None:
-    request = HTTPXRequest(
-        timeout=5.0
-    )
+    request = HTTPXRequest()
 
     application = Application.builder().token("7428102257:AAEtVfBFNysLcUIK4K0awRHjm96gaP_ogic").request(request).build()
 
@@ -86,4 +85,3 @@ def main() -> None:
 
 if __name__ == '__main__':
     main()
-                  
