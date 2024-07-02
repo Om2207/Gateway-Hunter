@@ -3,9 +3,10 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, CallbackContext
 from telegram.request import HTTPXRequest
 import requests
+import re
 
 logging.basicConfig(
-    format='%(asctime)s - %(name=sname)s - %(levelname)s - %(message)s', level=logging.INFO
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO
 )
 logger = logging.getLogger(__name__)
 
@@ -67,8 +68,15 @@ async def process_urls(update: Update, context: CallbackContext, urls: list) -> 
 
 async def set_proxy(update: Update, context: CallbackContext) -> None:
     global proxy_url
-    proxy_url = context.args[0] if context.args else None
-    await update.message.reply_text(f'Proxy set to: {proxy_url}' if proxy_url else 'Proxy removed.')
+    raw_proxy_pattern = re.compile(r'^(?P<host>[^:]+):(?P<port>\d+):(?P<user>[^:]+):(?P<password>.+)$')
+    if context.args and raw_proxy_pattern.match(context.args[0]):
+        match = raw_proxy_pattern.match(context.args[0])
+        formatted_proxy = f"http://{match.group('user')}:{match.group('password')}@{match.group('host')}:{match.group('port')}"
+        proxy_url = formatted_proxy
+        await update.message.reply_text(f'Proxy set to: {proxy_url}')
+    else:
+        proxy_url = None
+        await update.message.reply_text('Invalid proxy format. Use host:port:username:password.')
 
 def main() -> None:
     request = HTTPXRequest()
@@ -85,3 +93,4 @@ def main() -> None:
 
 if __name__ == '__main__':
     main()
+    
