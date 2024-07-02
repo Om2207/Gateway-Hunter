@@ -75,8 +75,12 @@ async def set_proxy(update: Update, context: CallbackContext) -> None:
         proxy_url = formatted_proxy
         await update.message.reply_text(f'Proxy set to: {proxy_url}')
     else:
-        proxy_url = None
         await update.message.reply_text('Invalid proxy format. Use host:port:username:password.')
+
+async def remove_proxy(update: Update, context: CallbackContext) -> None:
+    global proxy_url
+    proxy_url = None
+    await update.message.reply_text('Proxy removed.')
 
 def main() -> None:
     request = HTTPXRequest()
@@ -85,7 +89,7 @@ def main() -> None:
 
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("set", set_proxy))
-    application.add_handler(CommandHandler("remove", set_proxy))
+    application.add_handler(CommandHandler("remove", remove_proxy))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     application.add_handler(MessageHandler(filters.Document.FileExtension("txt") & ~filters.COMMAND, handle_document))
 
@@ -93,4 +97,4 @@ def main() -> None:
 
 if __name__ == '__main__':
     main()
-    
+                
