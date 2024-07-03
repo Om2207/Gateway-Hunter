@@ -1,11 +1,11 @@
 
                 
+import logging
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, CallbackContext
 from telegram.request import HTTPXRequest
 import requests
 import re
-import logging
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO
@@ -13,29 +13,17 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 ENDPOINT = "https://api.adwadev.com/api/gate.php?url="
-CHANNEL_USERNAME = '@ccbinspremium'
 proxy_url = None
 
 async def start(update: Update, context: CallbackContext) -> None:
-    await update.message.reply_text('Hi! Use the /site command followed by one or more URLs (space-separated) or a .txt file with URLs to fetch data.')
-
-def check_subscription(user_id):
-    url = f"https://api.telegram.org/bot{context.bot.token}/getChatMember?chat_id={CHANNEL_USERNAME}&user_id={user_id}"
-    response = requests.get(url).json()
-    status = response.get("result", {}).get("status", "")
-    return status in ["member", "administrator", "creator"]
+    await update.message.reply_text('Hi! Send me one or more URLs (space-separated) or a .txt file with URLs and I will fetch data for you.')
 
 async def handle_message(update: Update, context: CallbackContext) -> None:
-    await update.message.reply_text('Please use the /site command followed by URLs to fetch data.')
+    text = update.message.text
+    urls = text.split()
+    await process_urls(update, context, urls)
 
 async def handle_document(update: Update, context: CallbackContext) -> None:
-    user_id = update.message.from_user.id
-    if not check_subscription(user_id):
-        keyboard = [[InlineKeyboardButton("Join Channel", url=f"https://t.me/{CHANNEL_USERNAME[1:]}")]]
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        await update.message.reply_text('You must join the channel to use this bot.', reply_markup=reply_markup)
-        return
-    
     document = update.message.document
     if document.file_name.endswith('.txt'):
         file = await document.get_file()
@@ -96,28 +84,12 @@ async def remove_proxy(update: Update, context: CallbackContext) -> None:
     proxy_url = None
     await update.message.reply_text('Proxy removed.')
 
-async def site(update: Update, context: CallbackContext) -> None:
-    user_id = update.message.from_user.id
-    if not check_subscription(user_id):
-        keyboard = [[InlineKeyboardButton("Join Channel", url=f"https://t.me/{CHANNEL_USERNAME[1:]}")]]
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        await update.message.reply_text('You must join the channel to use this bot.', reply_markup=reply_markup)
-        return
-    
-    text = update.message.text
-    urls = text.split()[1:]
-    if urls:
-        await process_urls(update, context, urls)
-    else:
-        await update.message.reply_text('Please provide one or more URLs.')
-
 def main() -> None:
     request = HTTPXRequest()
 
     application = Application.builder().token("7428102257:AAEtVfBFNysLcUIK4K0awRHjm96gaP_ogic").request(request).build()
 
     application.add_handler(CommandHandler("start", start))
-    application.add_handler(CommandHandler("site", site))
     application.add_handler(CommandHandler("set", set_proxy))
     application.add_handler(CommandHandler("remove", remove_proxy))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
@@ -127,3 +99,4 @@ def main() -> None:
 
 if __name__ == '__main__':
     main()
+                
